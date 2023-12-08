@@ -7,6 +7,7 @@ fn main() {
         current: None,
         next: None,
         counter: 0,
+        gear_ratio: 0,
     };
 
     for line in io::stdin().lines() {
@@ -17,7 +18,8 @@ fn main() {
     // Carry over line for the end
     board = board.next("");
 
-    println!("{}", board.counter)
+    println!("Counter: {}", board.counter);
+    println!("Gear Ratio {}", board.gear_ratio);
 }
 
 #[derive(Debug)]
@@ -28,6 +30,7 @@ enum Span {
         value: i32,
     },
     Symbol(usize),
+    Gear(usize),
 }
 
 #[derive(Debug)]
@@ -36,6 +39,7 @@ struct Board {
     current: Option<Vec<Span>>,
     next: Option<Vec<Span>>,
     counter: i32,
+    gear_ratio: i32,
 }
 
 impl Board {
@@ -58,8 +62,9 @@ impl Board {
 
                 buf.clear();
             }
-            
-            if !char.is_digit(10) && char != '.' {
+            if !char.is_digit(10) && char == '*' {
+                block.push(Span::Gear(idx));
+            } else if !char.is_digit(10) && char != '.' {
                 block.push(Span::Symbol(idx));
             }
         }
@@ -77,8 +82,7 @@ impl Board {
 
 
         let counter = self.counter + self.calc();
-
-        println!("{:?}", block);
+        let ratio = self.gear_ratio + self.ratio();
 
         return Board {
             last: self.current,
@@ -86,6 +90,7 @@ impl Board {
             next: Some(block),
 
             counter: counter,
+            gear_ratio: ratio,
         }
 
     }
@@ -98,23 +103,60 @@ impl Board {
 
         let symbols = current.iter().filter_map(|p| match p {
             Span::Symbol(i) => Some(i),
+            Span::Gear(i) => Some(i),
             _  => None,
         });
 
-        let mut val = 0;
+        let mut val: i32 = 0;
         for symbol in symbols {
             let symbol = *symbol;
 
             if let Some(prev) = &self.last {
-                val += sum(symbol, prev);
+                val += find_adjacent(symbol, prev).iter().sum::<i32>();
             }
 
             if let Some(cur) = &self.current {
-                val += sum(symbol, cur);
+                val += find_adjacent(symbol, cur).iter().sum::<i32>();
             }
 
             if let Some(nex) = &self.next {
-                val += sum(symbol, nex);
+                val += find_adjacent(symbol, nex).iter().sum::<i32>();
+            }
+        }
+
+        return val;
+    }
+
+    fn ratio(&self) -> i32 {
+        let current = match &self.current {
+            Some(line) => line,
+            None => return 0,
+        };
+
+        let symbols = current.iter().filter_map(|p| match p {
+            Span::Gear(i) => Some(i),
+            _  => None,
+        });
+
+        let mut val: i32 = 0;
+        for symbol in symbols {
+            let symbol = *symbol;
+            let mut found = Vec::new();
+
+            if let Some(prev) = &self.last {
+                found.append(&mut find_adjacent(symbol, prev));
+            }
+
+            if let Some(cur) = &self.current {
+                found.append(&mut find_adjacent(symbol, cur));
+            }
+
+            if let Some(nex) = &self.next {
+                found.append(&mut find_adjacent(symbol, nex));
+            }
+
+            if found.len() == 2 {
+                val += found.iter().fold(1, |acc, i| acc * i)
             }
         }
 
@@ -122,18 +164,17 @@ impl Board {
     }
 }
 
-fn sum(idx: usize, list: &Vec<Span>) -> i32 {
+fn find_adjacent(idx: usize, list: &Vec<Span>) -> Vec<i32> {
     list.iter()
         .filter_map(|s| 
             match s {
             Span::Number { start, end, value } => {
                 if idx + 1 >= *start && idx - 1 <= *end {
-                    Some(value)
+                    Some(*value)
                 } else {
                     None
                 }
             }
             _ => None,
-            })
-    .sum()
+            }).collect()
 }
