@@ -1,8 +1,7 @@
 use std::io;
 
 fn main() {
-    
-    let mut board = Board{
+    let mut board = Board {
         last: None,
         current: None,
         next: None,
@@ -13,7 +12,7 @@ fn main() {
     for line in io::stdin().lines() {
         if let Some(line) = line.ok() {
             board = board.next(&line);
-        } 
+        }
     }
     // Carry over line for the end
     board = board.next("");
@@ -43,7 +42,6 @@ struct Board {
 }
 
 impl Board {
-
     fn next(self, line: &str) -> Board {
         let mut block = Vec::new();
         let mut buf = String::new();
@@ -55,7 +53,7 @@ impl Board {
                 let val = buf.parse::<i32>().unwrap();
 
                 block.push(Span::Number {
-                    start:  idx - buf.len(),
+                    start: idx - buf.len(),
                     end: idx - 1,
                     value: val,
                 });
@@ -69,17 +67,16 @@ impl Board {
             }
         }
         if buf.len() != 0 {
-                let val = buf.parse::<i32>().unwrap();
+            let val = buf.parse::<i32>().unwrap();
 
-                block.push(Span::Number {
-                    start:  line.len() - buf.len(),
-                    end: line.len(),
-                    value: val,
-                });
+            block.push(Span::Number {
+                start: line.len() - buf.len(),
+                end: line.len(),
+                value: val,
+            });
 
-                buf.clear();
-            }
-
+            buf.clear();
+        }
 
         let counter = self.counter + self.calc();
         let ratio = self.gear_ratio + self.ratio();
@@ -91,8 +88,7 @@ impl Board {
 
             counter: counter,
             gear_ratio: ratio,
-        }
-
+        };
     }
 
     fn calc(&self) -> i32 {
@@ -104,7 +100,7 @@ impl Board {
         let symbols = current.iter().filter_map(|p| match p {
             Span::Symbol(i) => Some(i),
             Span::Gear(i) => Some(i),
-            _  => None,
+            _ => None,
         });
 
         let mut val: i32 = 0;
@@ -135,7 +131,7 @@ impl Board {
 
         let symbols = current.iter().filter_map(|p| match p {
             Span::Gear(i) => Some(i),
-            _  => None,
+            _ => None,
         });
 
         let mut val: i32 = 0;
@@ -166,8 +162,7 @@ impl Board {
 
 fn find_adjacent(idx: usize, list: &Vec<Span>) -> Vec<i32> {
     list.iter()
-        .filter_map(|s| 
-            match s {
+        .filter_map(|s| match s {
             Span::Number { start, end, value } => {
                 if idx + 1 >= *start && idx - 1 <= *end {
                     Some(*value)
@@ -176,5 +171,6 @@ fn find_adjacent(idx: usize, list: &Vec<Span>) -> Vec<i32> {
                 }
             }
             _ => None,
-            }).collect()
+        })
+        .collect()
 }

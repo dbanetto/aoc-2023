@@ -1,7 +1,6 @@
 use std::io;
 
 fn main() {
-
     let mut count = 0;
 
     let lines = io::stdin().lines();
@@ -17,7 +16,6 @@ fn main() {
 }
 
 fn translate_line(line: &str) -> (i32, i32) {
-
     let mut first: Option<(usize, i32)> = None;
     let mut last: Option<(usize, i32)> = None;
 
@@ -31,21 +29,21 @@ fn translate_line(line: &str) -> (i32, i32) {
         ("seven", 7),
         ("eight", 8),
         ("nine", 9),
-        ("1",1),
-        ("2",2),
-        ("3",3),
-        ("4",4),
-        ("5",5),
-        ("6",6),
-        ("7",7),
-        ("8",8),
-        ("9",9),
+        ("1", 1),
+        ("2", 2),
+        ("3", 3),
+        ("4", 4),
+        ("5", 5),
+        ("6", 6),
+        ("7", 7),
+        ("8", 8),
+        ("9", 9),
     ] {
         if let Some(idx) = line.find(word) {
             first = match first {
                 None => Some((idx, val)),
                 Some((fidx, _)) if fidx >= idx => Some((idx, val)),
-                _ => first
+                _ => first,
             };
         }
 
@@ -53,7 +51,7 @@ fn translate_line(line: &str) -> (i32, i32) {
             last = match last {
                 None => Some((idx, val)),
                 Some((lidx, _)) if lidx <= idx => Some((idx, val)),
-                _ => last
+                _ => last,
             };
         }
     }

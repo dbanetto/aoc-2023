@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use std::io;
+use std::str::FromStr;
 
 fn main() {
     let lines = io::stdin().lines();
@@ -11,15 +11,14 @@ fn main() {
         if let Some(line) = line.ok() {
             let game = match GameSet::from_str(&line) {
                 Ok(game) => game,
-                Err(err) => panic!("{:?}", err)
+                Err(err) => panic!("{:?}", err),
             };
-
 
             if game
                 .games
                 .iter()
-                .fold(true, |acc , g| acc && g.is_valid(12, 14, 13)) {
-
+                .fold(true, |acc, g| acc && g.is_valid(12, 14, 13))
+            {
                 count += game.id;
             }
 
@@ -33,7 +32,6 @@ fn main() {
     println!("Possible: {}", count);
     println!("Power: {}", power);
 }
-
 
 #[derive(Debug, PartialEq, Eq)]
 struct ParseGameError {
@@ -55,25 +53,29 @@ struct GameSet {
 
 impl GameSet {
     fn power(&self) -> Option<u32> {
-
-        let red = self.games.iter()
+        let red = self
+            .games
+            .iter()
             .filter_map(|g| g.red)
-            .reduce(|acc, m| acc.max(m) );
+            .reduce(|acc, m| acc.max(m));
 
-        let blue = self.games.iter()
+        let blue = self
+            .games
+            .iter()
             .filter_map(|g| g.blue)
-            .reduce(|acc, m| acc.max(m) );
+            .reduce(|acc, m| acc.max(m));
 
-        let green = self.games.iter()
+        let green = self
+            .games
+            .iter()
             .filter_map(|g| g.green)
-            .reduce(|acc, m| acc.max(m) );
+            .reduce(|acc, m| acc.max(m));
 
         match (red, blue, green) {
             (Some(r), Some(b), Some(g)) => Some(r * g * b),
-            _ => None
+            _ => None,
         }
     }
-
 }
 
 impl Game {
@@ -92,21 +94,21 @@ impl Game {
             Some(g) if g > max_green => return false,
             _ => (),
         };
-        return true
+        return true;
     }
-
 }
 
 impl FromStr for GameSet {
     type Err = ParseGameError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-
         let (id, rest) = match s.split_once(":") {
             Some(b) => b,
-            None => { return Err(ParseGameError{
-                reason: "Split failed",
-            }) },
+            None => {
+                return Err(ParseGameError {
+                    reason: "Split failed",
+                })
+            }
         };
 
         let num: u32 = u32::from_str(id.strip_prefix("Game ").unwrap()).unwrap();
@@ -114,7 +116,6 @@ impl FromStr for GameSet {
         let mut games = vec![];
 
         for game in rest.split(";") {
-
             let game = match Game::from_str(game) {
                 Ok(g) => g,
                 Err(e) => return Err(e),
@@ -123,10 +124,10 @@ impl FromStr for GameSet {
             games.push(game);
         }
 
-        return Ok(GameSet{
+        return Ok(GameSet {
             id: num,
             games: games,
-        })
+        });
     }
 }
 
@@ -137,10 +138,9 @@ impl FromStr for Game {
         let mut game = Game::default();
 
         for section in s.split(",") {
-
             let (num, name) = match section.trim().split_once(" ") {
                 Some(b) => b,
-                None => { return Err(ParseGameError { reason: "bad game" }) },
+                None => return Err(ParseGameError { reason: "bad game" }),
             };
 
             let num = u32::from_str(num.trim()).unwrap();
@@ -148,18 +148,15 @@ impl FromStr for Game {
             match name {
                 "red" => {
                     game.red = Some(num);
-                },
+                }
                 "blue" => {
                     game.blue = Some(num);
-                },
+                }
                 "green" => {
                     game.green = Some(num);
-                },
-                _ => {
-                    return Err(ParseGameError { reason: "bad name" })
                 }
+                _ => return Err(ParseGameError { reason: "bad name" }),
             }
-
         }
 
         Ok(game)
