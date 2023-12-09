@@ -1,21 +1,37 @@
 use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::io;
 use std::str::FromStr;
 
 fn main() {
     let mut points = 0;
+    let mut count = 0;
+
+    let mut card_queue: VecDeque<u32> = VecDeque::new();
+
+    card_queue.resize_with(25, || 1);
 
     for line in io::stdin().lines() {
         if let Some(line) = line.ok() {
+            let extra = card_queue.pop_front().unwrap_or_default();
+            card_queue.push_back(1);
 
             let card = Card::from_str(&line).unwrap();
-            println!("{:?}", card);
+            // println!("{:?}", card);
 
-            points += card.points()
+            let duplicates = card.matching();
+
+            for (val, _) in card_queue.iter_mut().zip(0..duplicates) {
+                *val += extra;
+            }
+
+            points += card.points();
+            count += extra;
         }
     }
 
-    println!("Points: {}", points)
+    println!("Points: {}", points);
+    println!("Count: {}", count);
 }
 
 #[derive(Debug)]
@@ -48,12 +64,17 @@ impl FromStr for Card {
 }
 
 impl Card {
-    fn points(&self) -> i32 {
+    fn matching(&self) -> u32 {
         let intersection = self.winning.intersection(&self.game);
 
-        let count: u32 = intersection.count().try_into().unwrap();
+        return intersection.count().try_into().unwrap();
+    }
+
+    fn points(&self) -> i32 {
+        let count = self.matching();
+
         if count == 1 {
-            return 1
+            return 1;
         } else if count > 1 {
             let base: i32 = 2;
             base.pow(count - 1)
