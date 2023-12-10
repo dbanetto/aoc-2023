@@ -1,16 +1,16 @@
 use std::ops::Range;
 
 fn main() {
-    let records = vec![
+    let records: Vec<(u64,u64)> = vec![
         // time, distance
-        (52, 426),
-        (94, 1374),
-        (75, 1279),
-        (94, 1216),
+        // (52, 426),
+        // (94, 1374),
+        // (75, 1279),
+        // (94, 1216),
+        (52947594,  426137412791216),
     ];
 
-    let mut ranges: Vec<Range<i32>> = Vec::new();
-    let mut sums = 1;
+    let mut sums: u64 = 1;
 
     for (t_max, distance) in records {
         let mut count = 0;
