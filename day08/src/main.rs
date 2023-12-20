@@ -39,28 +39,43 @@ fn main() {
         }
     }
 
-    // println!("{:?}", choices);
-    // println!("{:?}", map);
-
-    let mut pointer = "AAA";
     let mut counter = 0;
 
     for choice in choices.iter().cycle() {
         counter += 1;
 
-        if let Some(next) = map.get(pointer) {
-            pointer = match *choice {
-                Choice::Left => &next.left,
-                Choice::Right => &next.right,
-            };
-        } else {
-            panic!("{} not found", pointer);
-        }
+        pointers = pointers
+            .into_iter()
+            .map(|pointer| {
+                if let Some(next) = map.get(&pointer) {
+                    match *choice {
+                        Choice::Left => next.left.clone(),
+                        Choice::Right => next.right.clone(),
+                    }
+                } else {
+                    panic!("{} not found", pointer);
+                }
+            })
+            .collect();
 
-
-        if pointer == "ZZZ" {
+        if pointers.iter().enumerate().fold(
+                true,
+                |acc, (idx, p)| {
+                    if p.ends_with("Z") {
+                        // collect the first iteration of each of these then
+                        // calculate the LCM :tada:
+                        println!("{} - {}", idx, counter);
+                        acc && true
+                    } else {
+                        false
+                    }
+                },
+            )
+        {
             break;
         }
+
+        // println!("{} - {:?}", counter, pointers);
     }
 
     println!("Got to it in: {} steps", counter);
