@@ -24,7 +24,7 @@ fn main() {
     let mut total = 0;
 
     for (idx, hand) in hands.iter().enumerate() {
-        println!("{} {:?}", idx, hand.to_strength());
+        // println!("{} {:?}", idx, hand.to_strength());
         total += (idx as u32 + 1) * hand.points;
     }
     println!("Total {}", total);
@@ -47,7 +47,6 @@ impl FromStr for Card {
             "a" => 0,
             "k" => 1,
             "q" => 2,
-            "j" => 3,
             "t" => 4,
             "9" => 5,
             "8" => 6,
@@ -57,6 +56,7 @@ impl FromStr for Card {
             "4" => 10,
             "3" => 11,
             "2" => 12,
+            "j" => 13, // JOKER
             _ => return Err(ParseError {}),
         };
 
@@ -100,41 +100,43 @@ enum Strengh {
     TwoPair { cards: Vec<Card> },
     Pair { cards: Vec<Card> },
     High { cards: Vec<Card> },
-    // FiveKind {
-    //     card: Card
-    // },
-    // FourKind {
-    //     card: Card
-    // },
-    // FullHouse {
-    //     three: Card,
-    //     two: Card,
-    // },
-    // ThreeKind {
-    //     three: Card,
-    // },
-    // TwoPair {
-    //     first: Card,
-    //     second: Card,
-    // },
-    // Pair {
-    //     card: Card,
-    // },
-    // High {
-    //     card: Card,
-    // },
 }
 
 impl Hand {
     fn to_strength(&self) -> Strengh {
         use std::collections::HashMap;
 
-        let count: HashMap<Card, u32> = self.cards.iter().fold(HashMap::new(), |mut acc, c| {
+        let mut count: HashMap<Card, u32> = self.cards.iter().fold(HashMap::new(), |mut acc, c| {
             acc.entry(*c)
                 .and_modify(|q: &mut u32| *q += 1)
                 .or_insert_with(|| 1);
             acc
         });
+
+        if count.len() > 1 && count.contains_key(&Card(13)) {
+            let joke = count.remove(&Card(13)).unwrap();
+
+            let keys = count
+                .iter()
+                .try_fold((Card(14), 0) , |(acc_c, acc_n), (c, n)| {
+                    
+                    if *n > acc_n {
+                        return Some((*c, *n));
+                    } else if *n < acc_n {
+                        return Some((acc_c, acc_n));
+                    } else if acc_c.0 < c.0 {
+                        return Some((*c, *n));
+                    } else {
+                        return Some((acc_c, acc_n));
+                    }
+                });
+
+            if let Some((card, _)) = keys {
+                count.entry(card).and_modify(|c| *c += joke );
+            } else {
+                count.entry(Card(13)).or_insert(joke);
+            }
+        }
 
         let mut count: Vec<(Card, u32)> = count.into_iter().collect::<Vec<_>>();
 
@@ -149,32 +151,31 @@ impl Hand {
         count.reverse();
 
         if count.len() == 1 {
-            let (card, _) = count.get(0).unwrap();
             return Strengh::FiveKind {
                 cards: self.cards.clone(),
             };
         } else if count.len() == 2 {
             let mut iter = count.iter();
-            let (card_a, count_a) = iter.next().unwrap();
-            let (card_b, count_b) = iter.next().unwrap();
+            let (_, count_a) = iter.next().unwrap();
+            let (_, count_b) = iter.next().unwrap();
 
-            match (card_a, count_a, card_b, count_b) {
-                (a, 3, b, 2) => {
+            match (count_a, count_b) {
+                (3, 2) => {
                     return Strengh::FullHouse {
                         cards: self.cards.clone(),
                     }
                 }
-                (a, 2, b, 3) => {
+                (2, 3) => {
                     return Strengh::FullHouse {
                         cards: self.cards.clone(),
                     }
                 }
-                (a, 4, _, 1) => {
+                (4, 1) => {
                     return Strengh::FourKind {
                         cards: self.cards.clone(),
                     }
                 }
-                (_, 1, b, 4) => {
+                (1, 4) => {
                     return Strengh::FourKind {
                         cards: self.cards.clone(),
                     }
@@ -183,16 +184,16 @@ impl Hand {
             };
         } else if count.len() == 3 {
             let mut iter = count.iter();
-            let (card_a, count_a) = iter.next().unwrap();
-            let (card_b, count_b) = iter.next().unwrap();
+            let (_, count_a) = iter.next().unwrap();
+            let (_, count_b) = iter.next().unwrap();
 
-            match (card_a, count_a, card_b, count_b) {
-                (a, 3, _, _) => {
+            match (count_a, count_b) {
+                (3, _) => {
                     return Strengh::ThreeKind {
                         cards: self.cards.clone(),
                     }
                 }
-                (a, 2, b, 2) => {
+                (2, 2) => {
                     return Strengh::TwoPair {
                         cards: self.cards.clone(),
                     }
@@ -201,10 +202,10 @@ impl Hand {
             };
         } else if count.len() == 4 {
             let mut iter = count.iter();
-            let (card_a, count_a) = iter.next().unwrap();
+            let (_, count) = iter.next().unwrap();
 
-            match (card_a, count_a) {
-                (a, 2) => {
+            match count {
+                2 => {
                     return Strengh::Pair {
                         cards: self.cards.clone(),
                     }
@@ -213,8 +214,6 @@ impl Hand {
             };
         }
 
-        let mut iter = count.iter();
-        let (card_a, _) = iter.next().unwrap();
         return Strengh::High {
             cards: self.cards.clone(),
         };
